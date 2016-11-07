@@ -38,6 +38,7 @@ import Data.Word
 import Data.Int
 import System.Random.Mersenne.Pure64
 
+import Control.Applicative(Applicative(..))
 
 -- | The state of a random monad, optimized for performance.
 data R a = R !a {-# UNPACK #-}!PureMT
@@ -47,10 +48,20 @@ data R a = R !a {-# UNPACK #-}!PureMT
 -- | A basic random monad, for generating random numbers from pure mersenne twisters.
 newtype Rand a = Rand { runRand :: PureMT -> R a }
 
+instance Functor Rand where
+    {-# INLINE fmap #-}
+    fmap = liftM
+
+instance Applicative Rand where
+    {-# INLINE pure #-}
+    pure a = Rand $ \s -> R a s
+    {-# INLINE (<*>) #-}
+    (<*>) = ap
+
 instance Monad Rand where
 
     {-# INLINE return #-}
-    return a = Rand $ \s -> R a s
+    return = pure
 
     {-# INLINE (>>=) #-}
     m >>= k  = Rand $ \s -> case runRand m s of
